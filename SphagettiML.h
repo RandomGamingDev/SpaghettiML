@@ -6,14 +6,16 @@
 #include <vector>
 #include <cmath>
 #include <unordered_map>
+#include <cstdlib>
+#include <fstream>
 
 namespace SphagettiML {
 	float rand_float(float lower, float higher) {
-		return lower + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * abs(lower - higher);
+		return lower + static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * std::abs(lower - higher);
 	}
 
 	unsigned int rand_int(unsigned int lower, unsigned int higher) {
-		return lower + (rand() % (higher - lower));
+		return lower + (std::rand() % (higher - lower));
 	}
 
 	struct Neuron {
@@ -24,7 +26,7 @@ namespace SphagettiML {
 			this->off = off;
 			this->to = to;
 		}
-		
+
 		void RandOff(float min, float max) {
 			this->off = rand_float(min, max);
 		}
@@ -66,12 +68,12 @@ namespace SphagettiML {
 		std::unordered_map<size_t, float> opNeurons;
 
 		Brain(float minWeight = 0, float maxWeight = 0, bool hasThreshold = false, float threshold = 0,
-			  std::vector<Neuron> neurons = std::vector<Neuron>(),
-			  LinkedList::List<std::pair<size_t, float>> inputs = LinkedList::List<std::pair<size_t,float>>(),
-			  LinkedList::List<size_t> outputOrder = LinkedList::List<size_t>(),
-			  std::unordered_map<size_t, float> outputs = std::unordered_map<size_t, float>(),
-			  LinkedList::List<size_t> opInstructions = LinkedList::List<size_t>(),
-			  std::unordered_map<size_t, float> opNeurons = std::unordered_map<size_t, float>()) {
+			std::vector<Neuron> neurons = std::vector<Neuron>(),
+			LinkedList::List<std::pair<size_t, float>> inputs = LinkedList::List<std::pair<size_t, float>>(),
+			LinkedList::List<size_t> outputOrder = LinkedList::List<size_t>(),
+			std::unordered_map<size_t, float> outputs = std::unordered_map<size_t, float>(),
+			LinkedList::List<size_t> opInstructions = LinkedList::List<size_t>(),
+			std::unordered_map<size_t, float> opNeurons = std::unordered_map<size_t, float>()) {
 			this->minWeight = minWeight;
 			this->maxWeight = maxWeight;
 			this->hasThreshold = hasThreshold;
@@ -83,7 +85,7 @@ namespace SphagettiML {
 			this->opInstructions = opInstructions;
 			this->opNeurons = opNeurons;
 		}
-		
+
 		void AddNeuron() {
 			this->neurons.push_back(Neuron());
 		}
@@ -91,7 +93,7 @@ namespace SphagettiML {
 		void AddRandNeuron() {
 			this->AddNeuron();
 			this->neurons.back().RandOff(minWeight, maxWeight);
-		} 
+		}
 
 		void AddInput(float value) {
 			this->inputs.push(std::pair<size_t, float>(this->neurons.size(), value));
@@ -130,7 +132,7 @@ namespace SphagettiML {
 		void RandDisable() {
 			this->GetRandNeuron().Disable();
 		}
-		
+
 		void RandAddTo() {
 			Neuron& from = this->GetRandNeuron();
 			size_t to = this->GetRandNeuronID();
