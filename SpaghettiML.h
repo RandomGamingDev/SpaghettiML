@@ -1,5 +1,5 @@
-#ifndef SPHAGETTIML_HEADER
-#define SPHAGETTIML_HEADER
+#ifndef SPAGHETTIML_HEADER
+#define SPAGHETTIML_HEADER
 
 #include "LinkedList.h"
 
@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <fstream>
 
-namespace SphagettiML {
+namespace SpaghettiML {
 	float rand_float(float lower, float higher) {
 		return lower + static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) * std::abs(lower - higher);
 	}
