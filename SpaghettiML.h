@@ -19,43 +19,52 @@ namespace SpaghettiML {
 	}
 
 	struct Neuron {
-		float off;
-		std::vector<size_t> to;
+		float bias;
+		std::vector<std::pair<float, size_t>> to;
 
-		Neuron(float off = 0, std::vector<size_t> to = std::vector<size_t>()) {
-			this->off = off;
+		Neuron(float bias = 0, std::vector<std::pair<float, size_t>> to = std::vector<std::pair<float, size_t>>()) {
+			this->bias = bias;
 			this->to = to;
 		}
 
-		void RandOff(float min, float max) {
-			this->off = rand_float(min, max);
+		void RandBias(float min, float max) {
+			this->bias = rand_float(min, max);
 		}
 
-		void Disable() {
-			this->off = 0;
-		}
-
-		void AddTo(size_t to_neuron) {
-			this->to.push_back(to_neuron);
-		}
-
-		void RemoveTo(size_t toRemove) {
-			this->to.erase(this->to.begin() + toRemove);
-		}
-
-		bool RandRemoveTo() {
-			if (this->to.size() == 0)
-				return false;
-			this->RemoveTo(rand_int(0, this->to.size()));
-			return true;
+		void AddTo(size_t to_neuron, float min, float max) {
+			this->to.push_back(std::pair<float, size_t>(rand_float(min, max), to_neuron));
 		}
 
 		size_t GetRandToID() {
 			return rand_int(0, this->to.size());
 		}
+
+		void ToRandWeight(size_t toID, float min, float max) {
+			this->to[toID].first = rand_float(min, max);
+		}
+
+		bool RandToRandWeight(float min, float max) {
+			if (this->to.size() == 0)
+				return false;
+			this->ToRandWeight(this->GetRandToID(), min, max);
+			return true;
+		}
+
+		void RemoveTo(size_t toID) {
+			this->to.erase(this->to.begin() + toID);
+		}
+
+		bool RandRemoveTo() {
+			if (this->to.size() == 0)
+				return false;
+			this->RemoveTo(this->GetRandToID());
+			return true;
+		}
 	};
 
 	struct Brain {
+		float minBias;
+		float maxBias;
 		float minWeight;
 		float maxWeight;
 		bool hasThreshold;
@@ -67,13 +76,15 @@ namespace SpaghettiML {
 		LinkedList::List<size_t> opInstructions;
 		std::unordered_map<size_t, float> opNeurons;
 
-		Brain(float minWeight = 0, float maxWeight = 0, bool hasThreshold = false, float threshold = 0,
+		Brain(float minBias = 0, float maxBias = 0, float minWeight = 0, float maxWeight = 0, bool hasThreshold = false, float threshold = 0,
 			std::vector<Neuron> neurons = std::vector<Neuron>(),
 			LinkedList::List<std::pair<size_t, float>> inputs = LinkedList::List<std::pair<size_t, float>>(),
 			LinkedList::List<size_t> outputOrder = LinkedList::List<size_t>(),
 			std::unordered_map<size_t, float> outputs = std::unordered_map<size_t, float>(),
 			LinkedList::List<size_t> opInstructions = LinkedList::List<size_t>(),
 			std::unordered_map<size_t, float> opNeurons = std::unordered_map<size_t, float>()) {
+			this->minBias = minBias;
+			this->maxBias = maxBias;
 			this->minWeight = minWeight;
 			this->maxWeight = maxWeight;
 			this->hasThreshold = hasThreshold;
@@ -92,20 +103,20 @@ namespace SpaghettiML {
 
 		void AddRandNeuron() {
 			this->AddNeuron();
-			this->neurons.back().RandOff(minWeight, maxWeight);
+			this->neurons.back().RandBias(minBias, maxBias);
 		}
 
 		void AddInput(float value) {
 			this->inputs.push(std::pair<size_t, float>(this->neurons.size(), value));
 			this->AddNeuron();
-			this->neurons.back().RandOff(minWeight, maxWeight);
+			this->neurons.back().RandBias(minBias, maxBias);
 		}
 
 		void AddOutput() {
 			this->outputOrder.push(this->neurons.size());
 			this->outputs.insert(std::pair<size_t, float>(this->neurons.size(), 0));
 			this->neurons.push_back(Neuron());
-			this->neurons.back().RandOff(minWeight, maxWeight);
+			this->neurons.back().RandBias(minBias, maxBias);
 		}
 
 		void RemoveInput(LinkedList::Node<std::pair<size_t, float>> prevNode) {
@@ -125,18 +136,18 @@ namespace SpaghettiML {
 			return this->neurons[this->GetRandNeuronID()];
 		}
 
-		void RandOff() {
-			this->GetRandNeuron().RandOff(this->minWeight, this->maxWeight);
+		void RandBias() {
+			this->GetRandNeuron().RandBias(this->minBias, this->maxBias);
 		}
 
-		void RandDisable() {
-			this->GetRandNeuron().Disable();
+		bool RandToRandWeight() {
+			return this->GetRandNeuron().RandToRandWeight(this->minWeight, this->maxWeight);
 		}
 
 		void RandAddTo() {
 			Neuron& from = this->GetRandNeuron();
 			size_t to = this->GetRandNeuronID();
-			from.AddTo(to);
+			from.AddTo(to, minWeight, maxWeight);
 		}
 
 		bool RandRemoveTo() {
@@ -149,10 +160,10 @@ namespace SpaghettiML {
 				this->AddRandNeuron();
 				break;
 			case 1:
-				this->RandOff();
+				this->RandBias();
 				break;
 			case 2:
-				this->RandDisable();
+				return this->RandToRandWeight();
 				break;
 			case 3:
 				this->RandAddTo();
@@ -176,7 +187,7 @@ namespace SpaghettiML {
 			for (size_t i = 0; i < toOp; i++) {
 				size_t neuronID = this->opInstructions.head->value;
 				Neuron& neuron = this->neurons[neuronID];
-				float value = this->opNeurons[this->opInstructions.head->value] * neuron.off;
+				float value = this->opNeurons[this->opInstructions.head->value] + neuron.bias;
 				this->opInstructions.erase_head();
 				this->opNeurons.erase(neuronID);
 				auto isOutput = this->outputs.find(neuronID);
@@ -184,36 +195,42 @@ namespace SpaghettiML {
 					isOutput->second += value;
 				if (value == 0 || (this->hasThreshold && value < this->threshold))
 					continue;
-				for (size_t toNeuron : neuron.to) {
-					auto isFound = this->opNeurons.find(toNeuron);
+				for (std::pair<float, size_t> connection : neuron.to) {
+					float addValue = value * connection.first;
+					auto isFound = this->opNeurons.find(connection.second);
 					if (isFound != this->opNeurons.end()) {
-						isFound->second += value;
+						isFound->second += addValue;
 						continue;
 					}
-					this->opInstructions.push(toNeuron);
-					this->opNeurons.insert(std::pair<size_t, float>(toNeuron, value));
+					this->opInstructions.push(connection.second);
+					this->opNeurons.insert(std::pair<size_t, float>(connection.second, addValue));
 				}
 			}
 		}
 
-		void ClearOutputs() {
+		void ClearOperatingNeurons() {
 			for (std::pair<const size_t, float>& neuron : this->opNeurons)
+				neuron.second = 0;
+		}
+
+		void ClearOutputs() {
+			for (std::pair<const size_t, float>& neuron : this->outputs)
 				neuron.second = 0;
 		}
 
 		LinkedList::List<float> GetOutputs() {
 			LinkedList::List<float> outputValues = LinkedList::List<float>();
 			for (LinkedList::Node<size_t>* i = this->outputOrder.head; i != nullptr; i = i->next)
-				outputValues.push(this->outputs[i->value] * this->neurons[i->value].off);
+				outputValues.push(this->outputs[i->value]);
 			return outputValues;
 		}
 
 		void Save() {
-			std::cout << "Not Implemented Yet!";
+			//std::cout << "Not Implemented Yet!";
 		}
 
 		void Load() {
-			std::cout << "Not Implemented Yet!";
+			//std::cout << "Not Implemented Yet!";
 		}
 	};
 }
