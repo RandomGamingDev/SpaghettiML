@@ -3,6 +3,7 @@
 
 #include "LinkedList.h"
 
+#include <stddef.h>
 #include <vector>
 #include <cmath>
 #include <unordered_map>
