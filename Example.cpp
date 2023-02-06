@@ -14,6 +14,7 @@ int main() {
 			brain.Tick();
 		output = brain.GetOutputs().head->value;
 		brain.ClearOutputs();
+		brain.ClearOperatingNeurons();
 		std::cout << output << '\n';
 		if (output > 0 && output < 1) {
 			std::cout << output;

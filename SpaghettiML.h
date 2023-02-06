@@ -187,7 +187,7 @@ namespace SpaghettiML {
 			for (size_t i = 0; i < toOp; i++) {
 				size_t neuronID = this->opInstructions.head->value;
 				Neuron& neuron = this->neurons[neuronID];
-				float value = this->opNeurons[this->opInstructions.head->value] + neuron.bias;
+				float value = this->opNeurons[neuronID] + neuron.bias;
 				this->opInstructions.erase_head();
 				this->opNeurons.erase(neuronID);
 				auto isOutput = this->outputs.find(neuronID);
@@ -195,7 +195,7 @@ namespace SpaghettiML {
 					isOutput->second += value;
 				if (value == 0 || (this->hasThreshold && value < this->threshold))
 					continue;
-				for (std::pair<float, size_t> connection : neuron.to) {
+				for (std::pair<float, size_t>& connection : neuron.to) {
 					float addValue = value * connection.first;
 					auto isFound = this->opNeurons.find(connection.second);
 					if (isFound != this->opNeurons.end()) {
